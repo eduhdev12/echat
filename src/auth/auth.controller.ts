@@ -23,6 +23,15 @@ export class AuthController {
     return await this.userService.find({ id: 1 });
   }
 
+  @Post("/login")
+  async loginUser(@Request() req) {
+    let {email, password} = req.body;
+
+    if(!email || !password) throw new UnauthorizedException("You are not authorized");
+
+    return await this.authService.login({email: email, password: password});
+  }
+
   @Post("/register")
   async registerUser(@Request() req) {
     let { email, password } = req.body;
