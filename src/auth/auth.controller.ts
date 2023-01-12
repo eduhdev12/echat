@@ -10,7 +10,9 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { UsersService } from "src/users/users.service";
 import { AuthService } from "./auth.service";
+import { AuthentificatedGuard } from "./authentificated.guard";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { LocalAuthGuard } from "./local-auth.guard";
 
 @Controller("auth")
 export class AuthController {
@@ -20,20 +22,18 @@ export class AuthController {
     private readonly authService: AuthService
   ) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthentificatedGuard)
   @Get("/test")
   async test(@Request() req) {
     return await this.userService.find({ id: 1 });
   }
 
+  @UseGuards(LocalAuthGuard)
   @Post("/login")
   async loginUser(@Request() req) {
-    let { email, password } = req.body;
+    // We need to validate this
 
-    if (!email || !password)
-      throw new UnauthorizedException("You are not authorized");
-
-    return await this.authService.login({ email: email, password: password });
+    return req.user;
   }
 
   @Post("/register")
