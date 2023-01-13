@@ -7,6 +7,8 @@ import { LocalStrategy } from "./local.strategy";
 import { JwtModule } from "@nestjs/jwt";
 import { JwtStrategy } from "./jwt.strategy";
 import { SessionSerializer } from "./session.serializer";
+import { APP_GUARD } from "@nestjs/core";
+import { RolesGuard } from "./roles.guard";
 
 @Module({
   imports: [
@@ -24,6 +26,10 @@ import { SessionSerializer } from "./session.serializer";
     LocalStrategy,
     JwtStrategy,
     SessionSerializer,
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    }
   ],
   exports: [AuthService],
 })

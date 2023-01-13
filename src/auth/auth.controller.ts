@@ -13,6 +13,7 @@ import { AuthService } from "./auth.service";
 import { AuthentificatedGuard } from "./authentificated.guard";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { LocalAuthGuard } from "./local-auth.guard";
+import { Role, Roles } from "./roles.decorators";
 
 @Controller("auth")
 export class AuthController {
@@ -26,6 +27,13 @@ export class AuthController {
   @Get("/test")
   async test(@Request() req) {
     return await this.userService.find({ id: 1 });
+  }
+
+  @UseGuards(AuthentificatedGuard, JwtAuthGuard)
+  @Roles(Role.PREMIUM)
+  @Get("/testadmin")
+  async testAdmin(@Request() req) {
+    return { message: "You are premium user" };
   }
 
   @UseGuards(LocalAuthGuard)
