@@ -22,7 +22,7 @@ export class AuthController {
     private readonly authService: AuthService
   ) {}
 
-  @UseGuards(AuthentificatedGuard)
+  @UseGuards(AuthentificatedGuard, JwtAuthGuard)
   @Get("/test")
   async test(@Request() req) {
     return await this.userService.find({ id: 1 });

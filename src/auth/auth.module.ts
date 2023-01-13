@@ -11,14 +11,20 @@ import { SessionSerializer } from "./session.serializer";
 @Module({
   imports: [
     UsersModule,
-    PassportModule.register({session: true}),
+    PassportModule.register({ session: true }),
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: "1d" },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthModule, AuthService, LocalStrategy, JwtStrategy, SessionSerializer],
+  providers: [
+    AuthModule,
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    SessionSerializer,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -22,10 +22,8 @@ export class UsersService {
     return user;
   }
 
-  async findUsername(
-    username: string
-  ): Promise<User | null> {
-    let user = await this.prisma.user.findFirst({ where: {username: username} }); // We need to remove hashed password from result query
+  async findByEmail(email: string): Promise<User | null> {
+    let user = await this.prisma.user.findUnique({ where: { email: email } }); // We need to remove hashed password from result query
 
     if (!user) throw new NotFoundException("User not found");
 
