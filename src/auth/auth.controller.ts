@@ -14,6 +14,7 @@ import { AuthentificatedGuard } from "./guards/authentificated.guard";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
 import { Role, Roles } from "./decorators/roles.decorators";
+import { Redirect, Response } from "@nestjs/common/decorators";
 
 @Controller("auth")
 export class AuthController {
@@ -40,19 +41,21 @@ export class AuthController {
   @Post("/login")
   async loginUser(@Request() req) {
     // We need to validate this
+    if (!req.user)
+      throw new UnauthorizedException("You are not authorized to do that");
+    this.logger.log(`${req.user.email} logged in`);
 
     return req.user;
   }
 
+  @UseGuards(LocalAuthGuard)
   @Post("/register")
   async registerUser(@Request() req) {
-    let { email, password } = req.body;
+    // We need to validate this
+    if (!req.user)
+      throw new UnauthorizedException("You are not authorized to do that");
+    this.logger.log(`${req.user.email} registered and logged in`);
 
-    if (!email || !password)
-      throw new UnauthorizedException("You are not authorized");
-
-    let registeredUser = await this.authService.register(email, password);
-
-    return registeredUser;
+    return req.user;
   }
 }
