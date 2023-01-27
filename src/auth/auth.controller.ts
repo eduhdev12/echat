@@ -10,9 +10,9 @@ import {
 import { AuthGuard } from "@nestjs/passport";
 import { UsersService } from "src/users/users.service";
 import { AuthService } from "./auth.service";
-import { AuthentificatedGuard } from "./authentificated.guard";
-import { JwtAuthGuard } from "./jwt-auth.guard";
-import { LocalAuthGuard } from "./local-auth.guard";
+import { AuthentificatedGuard } from "./guards/authentificated.guard";
+import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { LocalAuthGuard } from "./guards/local-auth.guard";
 import { Role, Roles } from "./roles.decorators";
 
 @Controller("auth")
