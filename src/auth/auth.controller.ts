@@ -13,7 +13,7 @@ import { AuthService } from "./auth.service";
 import { AuthentificatedGuard } from "./guards/authentificated.guard";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
-import { Role, Roles } from "./roles.decorators";
+import { Role, Roles } from "./decorators/roles.decorators";
 
 @Controller("auth")
 export class AuthController {

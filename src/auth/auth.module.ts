@@ -6,7 +6,7 @@ import { PassportModule } from "@nestjs/passport";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { JwtModule } from "@nestjs/jwt";
 import { JwtStrategy } from "./strategies/jwt.strategy";
-import { SessionSerializer } from "./session.serializer";
+import { SessionSerializer } from "./serializer/session.serializer";
 import { APP_GUARD } from "@nestjs/core";
 import { RolesGuard } from "./guards/roles.guard";
 
