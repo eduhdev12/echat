@@ -1,26 +1,31 @@
-import { ConsoleLogger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
-import { PrismaService } from "./prisma.service";
+import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import * as session from "express-session";
 import * as passport from "passport";
+import { AppModule } from "./app.module";
+import { PrismaService } from "./prisma.service";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const prismaService = app.get(PrismaService);
 
   app.use(
     session({
       secret: process.env.JWT_SECRET,
-      resave: false,
-      saveUninitialized: false,
+      resave: true,
+      saveUninitialized: true,
       cookie: { maxAge: 360000 },
+      store: new PrismaSessionStore(prismaService, {
+        checkPeriod: 2 * 60 * 1000, //ms
+        dbRecordIdIsSessionId: true,
+        dbRecordIdFunction: undefined,
+      }),
     })
   );
 
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
   await app.listen(3000);
 }
