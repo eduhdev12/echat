@@ -25,6 +25,12 @@ async function bootstrap() {
 
   app.use(passport.initialize());
   app.use(passport.session());
+  app.enableCors({
+    credentials: true,
+    origin: ['http://localhost:5173'],
+    methods: "GET, PUT, POST, DELETE",
+    allowedHeaders: "Content-Type, Authorization",
+  });
 
   await prismaService.enableShutdownHooks(app);
   await app.listen(3000);
