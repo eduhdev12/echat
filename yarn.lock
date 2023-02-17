@@ -933,6 +933,13 @@
     "@types/qs" "*"
     "@types/range-parser" "*"
 
+"@types/express-session@^1.17.6":
+  version "1.17.6"
+  resolved "https://registry.yarnpkg.com/@types/express-session/-/express-session-1.17.6.tgz#1c8881ba0dc836ffbf1071b2f020d60fcca0f08c"
+  integrity sha512-L6sB04HVA4HEZo1hDL65JXdZdBJtzZnCiw/P7MnO4w6746tJCNtXlHtzEASyI9ccn9zyOw6IbqQuhVa03VpO4w==
+  dependencies:
+    "@types/express" "*"
+
 "@types/express@*", "@types/express@^4.17.13":
   version "4.17.15"
   resolved "https://registry.yarnpkg.com/@types/express/-/express-4.17.15.tgz#9290e983ec8b054b65a5abccb610411953d417ff"
