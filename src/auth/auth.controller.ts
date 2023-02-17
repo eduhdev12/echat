@@ -15,6 +15,7 @@ import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
 import { Role, Roles } from "./decorators/roles.decorators";
 import { Redirect, Response } from "@nestjs/common/decorators";
+import { LoggedReq } from "src/users/user.types";
 
 @Controller("auth")
 export class AuthController {
@@ -33,8 +34,8 @@ export class AuthController {
   @UseGuards(AuthentificatedGuard, JwtAuthGuard)
   @Roles(Role.PREMIUM)
   @Get("/testadmin")
-  async testAdmin(@Request() req) {
-    return { message: "You are premium user" };
+  async testAdmin(@Request() req: LoggedReq) {
+    return { message: "You are premium user", expire: req.session.cookie.maxAge };
   }
 
   @UseGuards(LocalAuthGuard)
