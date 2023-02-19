@@ -23,7 +23,9 @@ export class ChannelsGateway implements OnGatewayConnection {
   handleConnection(@ConnectedSocket() client: Socket, ...args: any[]) {
     this.logger.warn("CLient connected");
     console.log(client);
-    const isDev = client.handshake.query.postman === "true";
+    const isPostman = client.handshake.query.postman === "true";
+
+    if(!client.handshake.headers["token"]) return client.disconnect();
 
     const parsedToken = (client.handshake.headers["token"] as string).match(
       /s%3A([^/]+)\./
