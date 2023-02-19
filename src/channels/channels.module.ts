@@ -1,11 +1,18 @@
-import { Module } from '@nestjs/common';
-import { ChannelsService } from './channels.service';
-import { ChannelsController } from './channels.controller';
-import { PrismaService } from 'src/prisma.service';
-import { ChannelsGateway } from './channels.gateway';
+import { Module } from "@nestjs/common";
+import { JwtModule } from "@nestjs/jwt";
+import { PrismaService } from "src/prisma.service";
+import { ChannelsController } from "./channels.controller";
+import { ChannelsGateway } from "./channels.gateway";
+import { ChannelsService } from "./channels.service";
 
 @Module({
+  imports: [
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: "4d" },
+    }),
+  ],
   providers: [ChannelsService, PrismaService, ChannelsGateway],
-  controllers: [ChannelsController]
+  controllers: [ChannelsController],
 })
 export class ChannelsModule {}

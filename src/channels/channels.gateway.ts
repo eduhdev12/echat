@@ -1,4 +1,5 @@
 import { ConsoleLogger } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import {
   ConnectedSocket,
   MessageBody,
@@ -7,7 +8,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from "@nestjs/websockets";
-import { Socket, Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { PrismaService } from "src/prisma.service";
 
 @WebSocketGateway({
@@ -18,20 +19,33 @@ export class ChannelsGateway implements OnGatewayConnection {
   server: Server;
   private readonly logger = new ConsoleLogger(ChannelsGateway.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
-  handleConnection(@ConnectedSocket() client: Socket, ...args: any[]) {
-    this.logger.warn("CLient connected");
-    console.log(client);
-    const isPostman = client.handshake.query.postman === "true";
+  async handleConnection(@ConnectedSocket() client: Socket, ...args: any[]) {
+    try {
+      const isPostman = client.handshake.query.postman === "true";
+      const userToken = isPostman
+        ? client.handshake.headers.token
+        : client.handshake.auth.token;
+      if (!userToken || !this.jwtService.verify(userToken))
+        return client.disconnect();
 
-    if(!client.handshake.headers["token"]) return client.disconnect();
+      let decodedData: any = this.jwtService.decode(userToken);
+      let userData = await this.prisma.user.findFirst({
+        where: { email: decodedData.email },
+        select: { id: true },
+      });
+      if (!userData) return client.disconnect();
 
-    const parsedToken = (client.handshake.headers["token"] as string).match(
-      /s%3A([^/]+)\./
-    )?.[1];
-    console.log("Parsed token", parsedToken);
-    client.data.token = parsedToken;
+      client.data.userId = userData.id;
+
+      this.logger.log(
+        `Client email=${decodedData.email}, id=${client.data.userId} connected!`
+      );
+    } catch (error) {
+      client.disconnect();
+      this.logger.error("Error while connecting to the socket", error);
+    }
   }
 
   @SubscribeMessage("joinRoom")
@@ -39,7 +53,7 @@ export class ChannelsGateway implements OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() channelId: string
   ): Promise<string> {
-    console.log("client joined room", client.data.token);
+    this.logger.log(`Client id=${client.data.userId} joined room 1`);
     client.join("1");
 
     return "Hello world!";
