@@ -27,7 +27,7 @@ async function bootstrap() {
   app.use(passport.session());
   app.enableCors({
     credentials: true,
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", "http://localhost:4173"],
     methods: "GET, PUT, POST, DELETE",
     allowedHeaders: "Content-Type, Authorization",
   });

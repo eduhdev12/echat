@@ -8,11 +8,12 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from "@nestjs/websockets";
+import { randomUUID } from "crypto";
 import { Server, Socket } from "socket.io";
 import { PrismaService } from "src/prisma.service";
 
 @WebSocketGateway({
-  cors: { origin: "http://localhost:5173" },
+  cors: { origin: ["http://localhost:5173", "http://localhost:4173"] },
 })
 export class ChannelsGateway implements OnGatewayConnection {
   @WebSocketServer()
@@ -31,13 +32,21 @@ export class ChannelsGateway implements OnGatewayConnection {
         return client.disconnect();
 
       let decodedData: any = this.jwtService.decode(userToken);
+      if (!decodedData || !decodedData.email) return client.disconnect();
+      
       let userData = await this.prisma.user.findFirst({
         where: { email: decodedData.email },
-        select: { id: true },
+        select: {
+          id: true,
+          avatar: true,
+          email: true,
+          role: true,
+          username: true,
+        },
       });
       if (!userData) return client.disconnect();
 
-      client.data.userId = userData.id;
+      client.data = userData;
 
       this.logger.log(
         `Client email=${decodedData.email}, id=${client.data.userId} connected!`
@@ -61,6 +70,12 @@ export class ChannelsGateway implements OnGatewayConnection {
 
   @SubscribeMessage("trigger")
   triggerMessage(@ConnectedSocket() client: Socket, payload: any) {
-    this.server.to("1").emit("newMessage", "testmsg123");
+    this.server
+      .to("1")
+      .emit(
+        "newMessage",
+        { text: randomUUID(), createdAt: Date.now() },
+        client.data
+      );
   }
 }
