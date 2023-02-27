@@ -11,6 +11,7 @@ import {
 import { randomUUID } from "crypto";
 import { Server, Socket } from "socket.io";
 import { PrismaService } from "src/prisma.service";
+import { MessageCreate } from "./channel.types";
 
 @WebSocketGateway({
   cors: { origin: ["http://localhost:5173", "http://localhost:4173"] },
@@ -33,7 +34,7 @@ export class ChannelsGateway implements OnGatewayConnection {
 
       let decodedData: any = this.jwtService.decode(userToken);
       if (!decodedData || !decodedData.email) return client.disconnect();
-      
+
       let userData = await this.prisma.user.findFirst({
         where: { email: decodedData.email },
         select: {
@@ -49,7 +50,7 @@ export class ChannelsGateway implements OnGatewayConnection {
       client.data = userData;
 
       this.logger.log(
-        `Client email=${decodedData.email}, id=${client.data.userId} connected!`
+        `Client email=${decodedData.email}, id=${client.data.id} connected!`
       );
     } catch (error) {
       client.disconnect();
@@ -62,19 +63,26 @@ export class ChannelsGateway implements OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() channelId: string
   ): Promise<string> {
-    this.logger.log(`Client id=${client.data.userId} joined room 1`);
+    this.logger.log(`Client id=${client.data.id} joined room 1`);
+    client.data.room = "1";
     client.join("1");
 
     return "Hello world!";
   }
 
-  @SubscribeMessage("trigger")
-  triggerMessage(@ConnectedSocket() client: Socket, payload: any) {
+  @SubscribeMessage("messageCreate")
+  triggerMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MessageCreate
+  ) {
+    this.logger.warn(client.data.room)
+    if (!client.data.room) return;
+
     this.server
-      .to("1")
+      .to(client.data.room)
       .emit(
-        "newMessage",
-        { text: randomUUID(), createdAt: Date.now() },
+        "messageCreate",
+        { text: payload.content, createdAt: Date.now() },
         client.data
       );
   }
