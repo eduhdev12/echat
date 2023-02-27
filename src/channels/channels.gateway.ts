@@ -14,7 +14,13 @@ import { PrismaService } from "src/prisma.service";
 import { MessageCreate } from "./channel.types";
 
 @WebSocketGateway({
-  cors: { origin: ["http://localhost:5173", "http://localhost:4173"] },
+  cors: {
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:4173",
+      process.env.CLIENT_ENDPOINT,
+    ],
+  },
 })
 export class ChannelsGateway implements OnGatewayConnection {
   @WebSocketServer()
@@ -75,7 +81,7 @@ export class ChannelsGateway implements OnGatewayConnection {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MessageCreate
   ) {
-    this.logger.warn(client.data.room)
+    this.logger.warn(client.data.room);
     if (!client.data.room) return;
 
     this.server
