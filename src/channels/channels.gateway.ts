@@ -67,28 +67,54 @@ export class ChannelsGateway implements OnGatewayConnection {
   @SubscribeMessage("joinRoom")
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() channelId: string
+    @MessageBody() channelId: number
   ): Promise<string> {
-    this.logger.log(`Client id=${client.data.id} joined room 1`);
-    client.data.room = "1";
-    client.join("1");
+    if (client.data.room === channelId) return;
+
+    let newMessages = await this.prisma.message.findMany({
+      where: { channelId: channelId },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            avatar: true,
+            email: true,
+            role: true,
+            username: true,
+          },
+        },
+      },
+    });
+    this.server.emit("setMessages", newMessages);
+
+    this.logger.log(`Client id=${client.data.id} joined room ${channelId}`);
+    client.data.room = channelId.toString();
+    client.join(channelId.toString());
 
     return "Hello world!";
   }
 
   @SubscribeMessage("messageCreate")
-  triggerMessage(
+  async triggerMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MessageCreate
   ) {
-    this.logger.warn(client.data.room);
     if (!client.data.room) return;
+
+    let newMessage = await this.prisma.message.create({
+      data: {
+        id: randomUUID(),
+        content: payload.content,
+        channel: { connect: { id: parseInt(client.data.room) } },
+        sender: { connect: { id: client.data.id } },
+      },
+    });
 
     this.server
       .to(client.data.room)
       .emit(
         "messageCreate",
-        { text: payload.content, createdAt: Date.now() },
+        { text: newMessage.content, createdAt: newMessage.createdAt },
         client.data
       );
   }
