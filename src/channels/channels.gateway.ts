@@ -93,6 +93,7 @@ export class ChannelsGateway implements OnGatewayConnection {
     this.logger.log(`Client id=${client.data.id} joined room ${channelId}`);
     client.data.room = channelId.toString();
     client.join(channelId.toString());
+    client.emit("joinRoom", channelId.toString());
   }
 
   @SubscribeMessage("messageCreate")
