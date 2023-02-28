@@ -70,6 +70,9 @@ export class ChannelsGateway implements OnGatewayConnection {
     @MessageBody() channelId: number
   ): Promise<string> {
     if (client.data.room === channelId) return;
+    if (client.data.room) {
+      client.leave(client.data.room);
+    }
 
     let newMessages = await this.prisma.message.findMany({
       where: { channelId: channelId },
@@ -85,7 +88,7 @@ export class ChannelsGateway implements OnGatewayConnection {
         },
       },
     });
-    this.server.emit("setMessages", newMessages);
+    client.emit("setMessages", newMessages);
 
     this.logger.log(`Client id=${client.data.id} joined room ${channelId}`);
     client.data.room = channelId.toString();
