@@ -14,9 +14,9 @@ async function bootstrap() {
       secret: process.env.JWT_SECRET,
       resave: true,
       saveUninitialized: true,
-      cookie: { maxAge: 360000 },
+      cookie: { maxAge: 4 * 60 * 60 * 1000 }, // 4 Hours
       store: new PrismaSessionStore(prismaService, {
-        checkPeriod: 2 * 60 * 1000, //ms
+        checkPeriod: 2 * 60 * 1000, // ms
         dbRecordIdIsSessionId: true,
         dbRecordIdFunction: undefined,
       }),
@@ -25,6 +25,16 @@ async function bootstrap() {
 
   app.use(passport.initialize());
   app.use(passport.session());
+  app.enableCors({
+    credentials: true,
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:4173",
+      process.env.CLIENT_ENDPOINT,
+    ],
+    methods: "GET, PUT, POST, DELETE",
+    allowedHeaders: "Content-Type, Authorization",
+  });
 
   await prismaService.enableShutdownHooks(app);
   await app.listen(3000);

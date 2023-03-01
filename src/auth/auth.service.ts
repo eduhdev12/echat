@@ -23,7 +23,7 @@ export class AuthService {
   async login(user: UserData) {
     await this.validateUser(user.email, user.password); // We need to make sure that user exists
 
-    const payload = { email: user.email, password: user.password };
+    const payload = { email: user.email, password: user.password }; // NOTE: save something else in the payload, not the password maybe
 
     return {
       access_token: this.jwtService.sign(payload),
