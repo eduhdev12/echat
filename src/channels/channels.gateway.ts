@@ -67,6 +67,8 @@ export class ChannelsGateway implements OnGatewayConnection {
       userData.sharedKey = sharedKey;
       client.data = userData;
 
+      client.emit("publicKey", serverKey, userPublicKey, sharedKey);
+
       this.logger.log(
         `Client email=${decodedData.email}, id=${client.data.id} connected!`
       );
