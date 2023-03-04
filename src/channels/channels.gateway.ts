@@ -8,8 +8,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from "@nestjs/websockets";
-import { randomUUID } from "crypto";
 import * as crypto from "crypto";
+import { randomUUID } from "crypto";
 import { Server, Socket } from "socket.io";
 import { PrismaService } from "src/prisma.service";
 import { MessageCreate } from "./channel.types";
@@ -33,23 +33,14 @@ export class ChannelsGateway implements OnGatewayConnection {
   private users = new Map();
   async handleConnection(@ConnectedSocket() client: Socket, ...args: any[]) {
     try {
-      // const dh = crypto.createECDH("secp256k1");
-      // const publicKey = dh.generateKeys('hex');
-
-      // const publicKey = dh.getPublicKey().toString("base64"); // Correct one
-      // const sharedKey = dh.computeSecret(publicKey, "base64", "hex");
-      // const dh = crypto.createDiffieHellman(512);
-      // const publicKey = dh.generateKeys();
-
-      // client.data.publicKey = publicKey;
-
-      // client.emit("publicKey", publicKey);
-
       const isPostman = client.handshake.query.postman === "true";
       const userToken = isPostman
         ? client.handshake.headers.token
         : client.handshake.auth.token;
-      if (!userToken || !this.jwtService.verify(userToken))
+      const userPublicKey = isPostman
+        ? client.handshake.headers.publicKey
+        : client.handshake.auth.publicKey;
+      if (!userToken || !userPublicKey || !this.jwtService.verify(userToken))
         return client.disconnect();
 
       let decodedData: any = this.jwtService.decode(userToken);
@@ -67,6 +58,13 @@ export class ChannelsGateway implements OnGatewayConnection {
       });
       if (!userData) return client.disconnect();
 
+      // Encryption system part
+      const ecdh = crypto.createECDH("secp256k1");
+      const serverKey = ecdh.generateKeys("base64");
+      const sharedKey = ecdh.computeSecret(userPublicKey, "base64", "base64");
+
+      // @ts-ignore: We will add type support later
+      userData.sharedKey = sharedKey;
       client.data = userData;
 
       this.logger.log(
@@ -76,28 +74,6 @@ export class ChannelsGateway implements OnGatewayConnection {
       client.disconnect();
       this.logger.error("Error while connecting to the socket", error);
     }
-  }
-
-  @SubscribeMessage("publicKey")
-  async onPublicKey(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() clientKey: any
-  ) {
-    // this.logger.log(publicKey);
-    const ecdh = crypto.createECDH("secp256k1");
-
-    let publicKeyy = ecdh.generateKeys("base64");
-    this.logger.log("client key", clientKey);
-    this.logger.log("publiccckeyyy", publicKeyy);
-    // let publicKeyy = ecdh.getPublicKey("base64");
-
-    let sharedKey = ecdh.computeSecret(clientKey, "base64", "base64");
-
-    // const sharedSecret = crypto.createECDH('secp256k1').computeSecret(publicKey, 'base64', 'hex');
-    this.users.set(client.id, sharedKey);
-    this.server.emit("publicKey", publicKeyy, clientKey, sharedKey);
-    this.logger.log("Emitted publicKey", publicKeyy);
-    // this.server.emit('users', Array.from(this.users.values()));
   }
 
   @SubscribeMessage("joinRoom")
