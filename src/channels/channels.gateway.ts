@@ -103,7 +103,21 @@ export class ChannelsGateway implements OnGatewayConnection {
         },
       },
     });
-    client.emit("setMessages", newMessages);
+    await Promise.all(
+      newMessages.map((message) => {
+        let serverDecrypt = decrypt(
+          {
+            key: process.env.DH_PUBLIC_KEY,
+            iv: Buffer.from(process.env.DH_IV_KEY, "base64"),
+          },
+          message.content
+        );
+        message.content = serverDecrypt;
+      })
+    );
+
+    let encryptedPayload = encrypt(client.data.sharedKey, JSON.stringify(newMessages));
+    client.emit("setMessages", encryptedPayload);
 
     this.logger.log(`Client id=${client.data.id} joined room ${channelId}`);
     client.data.room = channelId.toString();
@@ -150,7 +164,7 @@ export class ChannelsGateway implements OnGatewayConnection {
       roomClient.emit(
         "messageCreate",
         clientEncryptMsg.data,
-        encrypt(roomClient.data.sharedKey, JSON.stringify(roomClient.data)),
+        encrypt(roomClient.data.sharedKey, JSON.stringify(client.data)),
         newMessage.createdAt,
         clientEncryptMsg.iv
       );
