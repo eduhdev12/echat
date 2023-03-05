@@ -124,12 +124,16 @@ export class ChannelsGateway implements OnGatewayConnection {
       { key: client.data.sharedKey, iv: client.data.iv },
       payload.data
     );
-    this.logger.warn(decryptedMessage);
+    let encryptedServerMessage = encrypt(
+      process.env.DH_PUBLIC_KEY,
+      decryptedMessage,
+      Buffer.from(process.env.DH_IV_KEY, "base64")
+    );
 
     let newMessage = await this.prisma.message.create({
       data: {
         id: randomUUID(),
-        content: payload.data,
+        content: encryptedServerMessage.data,
         channel: { connect: { id: parseInt(client.data.room) } },
         sender: { connect: { id: client.data.id } },
       },
