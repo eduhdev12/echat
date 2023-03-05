@@ -10,9 +10,10 @@ import {
 } from "@nestjs/websockets";
 import * as crypto from "crypto";
 import { randomUUID } from "crypto";
+import { decrypt, encrypt } from "encryption/encryption";
 import { Server, Socket } from "socket.io";
 import { PrismaService } from "src/prisma.service";
-import { MessageCreate } from "./channel.types";
+import { EncryptedMessage, MessageCreate } from "./channel.types";
 
 @WebSocketGateway({
   cors: {
@@ -113,25 +114,42 @@ export class ChannelsGateway implements OnGatewayConnection {
   @SubscribeMessage("messageCreate")
   async triggerMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() payload: MessageCreate
+    @MessageBody() payload: EncryptedMessage
   ) {
     if (!client.data.room) return;
+
+    client.data.iv = payload.iv;
+
+    let decryptedMessage = decrypt(
+      { key: client.data.sharedKey, iv: client.data.iv },
+      payload.data
+    );
+    this.logger.warn(decryptedMessage);
 
     let newMessage = await this.prisma.message.create({
       data: {
         id: randomUUID(),
-        content: payload.content,
+        content: payload.data,
         channel: { connect: { id: parseInt(client.data.room) } },
         sender: { connect: { id: client.data.id } },
       },
     });
 
-    this.server
-      .to(client.data.room)
-      .emit(
-        "messageCreate",
-        { text: newMessage.content, createdAt: newMessage.createdAt },
-        client.data
+    for (let id of this.server.of("/").adapter.rooms.get(client.data.room)) {
+      let roomClient = this.server.of("/").sockets.get(id);
+      if (!roomClient) return;
+
+      let clientEncryptMsg = encrypt(
+        roomClient.data.sharedKey,
+        decryptedMessage
       );
+      roomClient.emit(
+        "messageCreate",
+        clientEncryptMsg.data,
+        encrypt(roomClient.data.sharedKey, JSON.stringify(roomClient.data)),
+        newMessage.createdAt,
+        clientEncryptMsg.iv
+      );
+    }
   }
 }
